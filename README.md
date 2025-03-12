@@ -1,6 +1,6 @@
 <h1 align="center" id="title">Krios Staking</h1>
 
-<p align="center"><img src="https://socialify.git.ci/avcisec/Krios-staking-protocol/image?description=1&amp;forks=1&amp;issues=1&amp;language=1&amp;name=1&amp;owner=1&amp;pulls=1&amp;stargazers=1&amp;theme=Light" alt="project-image"></p>
+<p align="center"><img src="https://socialify.git.ci/avcisec/Krios-staking-protocol/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2Favcisec%2FKrios-staking-protocol%2Frefs%2Fheads%2Fmain%2FpfY6Ns01.svg&name=1&owner=1&pulls=1&stargazers=1&theme=Light" alt="Krios-staking-protocol" width="640" height="320" /></p>
 
 <p id="description">This is a project i develope to understand staking algorithms and math.</p>
 
