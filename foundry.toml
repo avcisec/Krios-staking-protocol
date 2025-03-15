@@ -5,6 +5,7 @@ libs = ["lib"]
 
 remappings = [
     '@openzeppelin-contracts/contracts=lib/openzeppelin-contracts/contracts',
+    '@solady/src=lib/solady/src',
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
