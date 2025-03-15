@@ -2,6 +2,11 @@
 
 pragma solidity 0.8.20;
 
+// to do
+// her fonksiyon icin natspec yaz
+// access control konfigure edilecek
+
+
 /*//////////////////////////////////////////////////////////////
                                 IMPORTS
 //////////////////////////////////////////////////////////////*/
@@ -9,6 +14,14 @@ pragma solidity 0.8.20;
 import {Ownable} from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+
+/**
+ * @title Krios Staking
+ * @author 0xavcieth
+ * @notice This contract is a staking contract to earn WETH with Krios Token
+ * @dev Implementation of Synthetix Staking Algorithm
+ */
+
 
 /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -107,5 +120,13 @@ contract Staking is Ownable {
         uint256 reward = rewards[msg.sender];
         rewards[msg.sender] = 0;
         i_rewardToken.safeTransferFrom(address(this), msg.sender, reward);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            GETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function getbalanceOf(address account) public view returns(uint256) {
+        return _balances[account];
     }
 }
