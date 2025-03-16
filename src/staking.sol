@@ -5,6 +5,9 @@ pragma solidity 0.8.20;
 // to do
 // her fonksiyon icin natspec yaz
 // access control konfigure edilecek
+// Events will be added
+// lock period entegre edilecek
+
 
 
 /*//////////////////////////////////////////////////////////////
@@ -14,6 +17,7 @@ pragma solidity 0.8.20;
 import {Ownable} from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title Krios Staking
@@ -23,11 +27,17 @@ import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/Saf
  */
 
 
-/*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
-contract Staking is Ownable {
+
+
+    /*//////////////////////////////////////////////////////////////
+                           TYPE DECLARATIONS                        
+    //////////////////////////////////////////////////////////////*/
+
+contract Staking is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -104,16 +114,16 @@ contract Staking is Ownable {
 
     } // tüm formül
 
-    function stake(uint256 amount) external updateReward(msg.sender) {
+    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         _totalSupply += amount;
         _balances[msg.sender] += amount;
         i_stakingToken.safeTransferFrom(msg.sender, address(this), amount);
     }
 
-    function unstake(uint256 amount) external updateReward(msg.sender) {
+    function unstake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         _totalSupply -= amount;
         _balances[msg.sender] -= amount;
-        i_stakingToken.safeTransferFrom(address(this), msg.sender, amount);
+        i_stakingToken.safeTransfer(msg.sender, amount);
     }
 
     function getReward() external updateReward(msg.sender) {
@@ -128,5 +138,9 @@ contract Staking is Ownable {
 
     function getbalanceOf(address account) public view returns(uint256) {
         return _balances[account];
+    }
+
+    function getTotalSupply() public view returns(uint256) {
+        return _totalSupply;
     }
 }

@@ -80,4 +80,37 @@ contract StakingTest is Test {
 
 
     }
+
+    function test_withdraw() public {
+
+    // alice stakes 100
+        vm.startPrank(tokenMinter);
+        krios.transfer(alice, 100);
+        vm.stopPrank();
+        vm.startPrank(alice);
+        krios.approve(address(staking), 100);
+        staking.stake(100);
+        vm.stopPrank();
+
+    // bob also stakes 100
+        vm.startPrank(tokenMinter);
+        krios.transfer(bob, 100);
+        vm.stopPrank();
+        vm.startPrank(bob);
+        krios.approve(address(staking), 100);
+        staking.stake(100);
+        vm.stopPrank();
+    // alice withdraws
+        console.log("alice staking balance:", staking.getbalanceOf(alice));
+        console.log("bob staking balance:", staking.getbalanceOf(bob));
+        console.log("totalsupply:", staking.getTotalSupply());
+        vm.prank(alice);
+        staking.unstake(100);
+        vm.prank(bob);
+        staking.unstake(100);
+        console.log("alice staking balance after withdraw:", staking.getbalanceOf(alice));
+        console.log("bob staking balance after withdraw:", staking.getbalanceOf(bob));
+    }
+
+
 }
