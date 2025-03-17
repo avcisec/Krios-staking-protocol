@@ -62,6 +62,8 @@ contract Staking is Ownable, ReentrancyGuard {
     uint256 public s_rewardRate = 100; // saniyede kazılan ödül miktarı formüldeki R değeri
     uint256 public s_lastUpdateTime; // kontratın son çağrılma zamanı
     uint256 public s_rewardPerTokenStored; //  matematik formülündeki S değeri
+    uint256 public s_rewardDuration = 7 days;
+    uint256 public s_periodFinish = 0;
     // Earned = s_rewardPerTokenStored - userRewardPerTokenPaid[user]
     uint256 private constant MULTIPLIER = 1e18; // precision için 18 basamak ekliyoruz
     uint256 private _totalSupply; // total number of token staked in this contract
@@ -95,6 +97,8 @@ contract Staking is Ownable, ReentrancyGuard {
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+
+    /* */
     function updateRewardRate(uint256 _rewardRate) public onlyOwner {
             require(_rewardRate > 0);
             s_rewardRate = _rewardRate;
