@@ -10,9 +10,9 @@ pragma solidity 0.8.20;
 
 
 
-/*//////////////////////////////////////////////////////////////
-                                IMPORTS
-//////////////////////////////////////////////////////////////*/
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                         Imports                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 import {Ownable} from "@openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -27,37 +27,31 @@ import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/Reentranc
  */
 
 
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          Errors                            */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 
 
-    /*//////////////////////////////////////////////////////////////
-                           TYPE DECLARATIONS                        
-    //////////////////////////////////////////////////////////////*/
+
 
 contract Staking is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    /*//////////////////////////////////////////////////////////////
-                               INTERFACES
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          Interfaces                        */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     IERC20 public immutable i_stakingToken;
     IERC20 public immutable i_rewardToken;
 
-    /*//////////////////////////////////////////////////////////////
-                                MAPPINGS
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          State Variables                   */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     mapping(address => uint256) private _balances; // user's stakingToken balance
     mapping(address => uint256) public userRewardPerTokenPaid; // Formüldeki P değeri
     mapping(address => uint256) public rewards; //
-
-    /*//////////////////////////////////////////////////////////////
-                            STATE VARIABLES
-    //////////////////////////////////////////////////////////////*/
 
     uint256 public s_rewardRate = 100; // saniyede kazılan ödül miktarı formüldeki R değeri
     uint256 public s_lastUpdateTime; // kontratın son çağrılma zamanı
@@ -68,9 +62,9 @@ contract Staking is Ownable, ReentrancyGuard {
     uint256 private constant MULTIPLIER = 1e18; // precision için 18 basamak ekliyoruz
     uint256 private _totalSupply; // total number of token staked in this contract
 
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                         Events                             */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     // event staked(address indexed user, uint256 amountStaked);
     // event RewardAdded(uint256 rewardAmount);
@@ -93,9 +87,9 @@ contract Staking is Ownable, ReentrancyGuard {
         i_rewardToken = IERC20(_rewardToken);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                               FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          Functions                         */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 
     /* */
@@ -136,9 +130,9 @@ contract Staking is Ownable, ReentrancyGuard {
         i_rewardToken.safeTransferFrom(address(this), msg.sender, reward);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            GETTER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          Getter Functions                  */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     function getbalanceOf(address account) public view returns(uint256) {
         return _balances[account];
