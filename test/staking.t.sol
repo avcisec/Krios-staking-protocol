@@ -14,9 +14,8 @@ contract StakingTest is Test {
     address public bob = makeAddr("bob");
     address public stakingDeployer = makeAddr("stakingDeployer");
     address public tokenMinter = makeAddr("tokenMinter");
-    uint public STARTING_BALANCE = 1 ether;
-    uint public TOTAL_REWARD = 100 ether;
-
+    uint256 public STARTING_BALANCE = 1 ether;
+    uint256 public TOTAL_REWARD = 100 ether;
 
     function setUp() public {
         // Pretend stakingDeployer and deploy weth, krios, staking contract
@@ -26,18 +25,15 @@ contract StakingTest is Test {
         vm.deal(tokenMinter, STARTING_BALANCE + TOTAL_REWARD);
         weth = new WETH();
         krios = new Krios();
-        staking = new Staking(address(krios),address(weth));
+        staking = new Staking(address(krios), address(weth));
         vm.startPrank(tokenMinter);
         krios.mint(1_000_000 * 1e18);
-        weth.deposit{value:TOTAL_REWARD}();
-        krios.approve(address(this),990_000);
+        weth.deposit{value: TOTAL_REWARD}();
+        krios.approve(address(this), 990_000);
         weth.approve(address(this), TOTAL_REWARD);
-        krios.transfer(address(staking),990_000);
+        krios.transfer(address(staking), 990_000);
         weth.transfer(address(staking), TOTAL_REWARD);
         vm.stopPrank();
-
-
-
     }
 
     function test_Deployment() public view returns (address) {
@@ -58,11 +54,30 @@ contract StakingTest is Test {
         console.log("alice reward:", staking.earned(alice));
         console.log("staking contract WETH balance:", weth.balanceOf(address(staking)));
         assert(staking.getbalanceOf(alice) != 0);
-
-
     }
 
-        function test_EarnedAmountAfter1Year() public {
+    function test_Unstaking() public {
+        vm.startPrank(tokenMinter);
+        krios.transfer(alice, 100);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        krios.approve(address(staking), 100);
+        staking.stake(100);
+
+        console.log("alice staking balance:", staking.getbalanceOf(alice));
+        console.log("alice reward:", staking.earned(alice));
+        console.log("staking contract WETH balance:", weth.balanceOf(address(staking)));
+
+        staking.unstake(100);
+        vm.stopPrank();
+        console.log("alice staking balance after withdraw:", staking.getbalanceOf(alice));
+        console.log("alice reward after withdraw:", staking.earned(alice));
+        console.log("staking contract WETH balance after withdraw:", weth.balanceOf(address(staking)));
+        assert(staking.getbalanceOf(alice) == 0);
+    }
+
+    function test_EarnedAmountAfter1Year() public {
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
         vm.stopPrank();
@@ -77,13 +92,10 @@ contract StakingTest is Test {
 
         console.log("alice reward after 1 year:", staking.earned(alice));
         assert(staking.earned(alice) != 0);
-
-
     }
 
     function test_withdraw() public {
-
-    // alice stakes 100
+        // alice stakes 100
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
         vm.stopPrank();
@@ -92,7 +104,7 @@ contract StakingTest is Test {
         staking.stake(100);
         vm.stopPrank();
 
-    // bob also stakes 100
+        // bob also stakes 100
         vm.startPrank(tokenMinter);
         krios.transfer(bob, 100);
         vm.stopPrank();
@@ -100,7 +112,7 @@ contract StakingTest is Test {
         krios.approve(address(staking), 100);
         staking.stake(100);
         vm.stopPrank();
-    // alice withdraws
+        // alice withdraws
         console.log("alice staking balance:", staking.getbalanceOf(alice));
         console.log("bob staking balance:", staking.getbalanceOf(bob));
         console.log("totalsupply:", staking.getTotalSupply());
@@ -111,6 +123,4 @@ contract StakingTest is Test {
         console.log("alice staking balance after withdraw:", staking.getbalanceOf(alice));
         console.log("bob staking balance after withdraw:", staking.getbalanceOf(bob));
     }
-
-
 }

@@ -4,11 +4,28 @@ pragma solidity 0.8.20;
 
 // to do
 // her fonksiyon icin natspec yaz
-// access control konfigure edilecek
-// Events will be added
 // lock period entegre edilecek
 
+// Layout of Contract:
+// version
+// imports
+// errors
+// interfaces, libraries, contracts
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
 
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// view & pure functions
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                         Imports                            */
@@ -20,23 +37,25 @@ import {SafeERC20} from "@openzeppelin-contracts/contracts/token/ERC20/utils/Saf
 import {ReentrancyGuard} from "@openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
 /**
+ *
+ *
  * @title Krios Staking
  * @author 0xavcieth
+ *
  * @notice This contract is a staking contract to earn WETH with Krios Token
  * @dev Implementation of Synthetix Staking Algorithm
  */
-
+contract Staking is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          Errors                            */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-
-
-
-
-contract Staking is Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+    error Staking__AmountCanNotBeZero();
+    error Staking__StakingDepositFailed();
+    error Staking__StakingWithdrawFailed();
+    error Staking__RewardClaimFailed();
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          Interfaces                        */
@@ -52,8 +71,8 @@ contract Staking is Ownable, ReentrancyGuard {
     mapping(address => uint256) private _balances; // user's stakingToken balance
     mapping(address => uint256) public userRewardPerTokenPaid; // Formüldeki P değeri
     mapping(address => uint256) public rewards; //
-
-    uint256 public s_rewardRate = 100; // saniyede kazılan ödül miktarı formüldeki R değeri
+    uint256 public s_rewardRate = 100;
+    // saniyede kazılan ödül miktarı formüldeki R değeri
     uint256 public s_lastUpdateTime; // kontratın son çağrılma zamanı
     uint256 public s_rewardPerTokenStored; //  matematik formülündeki S değeri
     uint256 public s_rewardDuration = 7 days;
@@ -66,10 +85,21 @@ contract Staking is Ownable, ReentrancyGuard {
     /*                         Events                             */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    // event staked(address indexed user, uint256 amountStaked);
-    // event RewardAdded(uint256 rewardAmount);
-    // event Withdrawed(address indexed user, uint256 amount);
-    // event RewardPaid(address indexed user, uint256 reward);
+    event tokenStaked(address indexed user, uint256 amountStaked);
+    event tokenWithdrawn(address indexed user, uint256 amountWithdrawn);
+    event rewardClaimed(address indexed user, uint256 ClaimedRewardAmount);
+    event rewardRateUpdated(uint256 NewRewardRate);
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                          Modifiers                         */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    modifier notZero(uint256 amount) {
+        if (amount == 0) {
+            revert Staking__AmountCanNotBeZero();
+        }
+        _;
+    }
 
     modifier updateReward(address account) {
         s_rewardPerTokenStored = rewardPerToken();
@@ -79,66 +109,88 @@ contract Staking is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(
-        address _stakingToken,
-        address _rewardToken
-    ) Ownable(msg.sender) {
+    constructor(address _stakingToken, address _rewardToken) Ownable(msg.sender) {
         i_stakingToken = IERC20(_stakingToken);
         i_rewardToken = IERC20(_rewardToken);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                          Functions                         */
+    /*                        Public Functions                    */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 
-    /* */
-    function updateRewardRate(uint256 _rewardRate) public onlyOwner {
-            require(_rewardRate > 0);
-            s_rewardRate = _rewardRate;
+    /**
+     * @notice This function updates amount of reward token to be paid out per second.
+     * @notice Only owner of this contract can change reward rate.
+     * @param _rewardRate Amount of reward tokens to be paid out per second.
+     */
+    function updateRewardRate(uint256 _rewardRate) public notZero(_rewardRate) onlyOwner {
+        s_rewardRate = _rewardRate;
+        emit rewardRateUpdated(_rewardRate);
     }
+
+
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                        External Functions                  */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+
+
+    function stake(uint256 amount) external nonReentrant notZero(amount) updateReward(msg.sender) {
+        _totalSupply += amount;
+        _balances[msg.sender] += amount;
+        emit tokenStaked(msg.sender, amount);
+        bool success = IERC20(i_stakingToken).transferFrom(msg.sender, address(this), amount);
+        if (!success) {
+            revert Staking__StakingDepositFailed();
+        }
+    }
+
+    function unstake(uint256 amount) external nonReentrant notZero(amount) updateReward(msg.sender) {
+        _totalSupply -= amount;
+        _balances[msg.sender] -= amount;
+        emit tokenWithdrawn(msg.sender, amount);
+        bool success = IERC20(i_stakingToken).transfer(msg.sender, amount);
+        if (!success) {
+            revert Staking__StakingWithdrawFailed();
+        }
+    }
+
+    function getReward() external updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        rewards[msg.sender] = 0;
+        emit rewardClaimed(msg.sender, reward);
+        bool success = IERC20(i_rewardToken).transferFrom(address(this), msg.sender, reward);
+        if (!success) {
+            revert Staking__RewardClaimFailed();
+        }
+        i_rewardToken.safeTransferFrom(address(this), msg.sender, reward);
+    }
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                  Public & External view Functions          */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     function rewardPerToken() public view returns (uint256) {
         if (_totalSupply == 0) {
             return 0;
         }
 
-        return s_rewardPerTokenStored + (s_rewardRate * (block.timestamp - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
+        return
+            s_rewardPerTokenStored + (s_rewardRate * (block.timestamp - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
     }
 
     function earned(address account) public view returns (uint256) {
-        return ( _balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / MULTIPLIER) + rewards[account];
-
-
+        return
+            (_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / MULTIPLIER) + rewards[account];
     } // tüm formül
 
-    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
-        _totalSupply += amount;
-        _balances[msg.sender] += amount;
-        i_stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-    }
-
-    function unstake(uint256 amount) external nonReentrant updateReward(msg.sender) {
-        _totalSupply -= amount;
-        _balances[msg.sender] -= amount;
-        i_stakingToken.safeTransfer(msg.sender, amount);
-    }
-
-    function getReward() external updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
-        rewards[msg.sender] = 0;
-        i_rewardToken.safeTransferFrom(address(this), msg.sender, reward);
-    }
-
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                          Getter Functions                  */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function getbalanceOf(address account) public view returns(uint256) {
+    function getbalanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
 
-    function getTotalSupply() public view returns(uint256) {
+    function getTotalSupply() public view returns (uint256) {
         return _totalSupply;
     }
 }
