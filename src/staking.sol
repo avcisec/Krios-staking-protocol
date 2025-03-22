@@ -61,8 +61,8 @@ contract Staking is Ownable, ReentrancyGuard {
     /*                          Interfaces                        */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    IERC20 public immutable i_stakingToken;
-    IERC20 public immutable i_rewardToken;
+    IERC20 public immutable i_stakingToken; // token to be staked
+    IERC20 public immutable i_rewardToken; // token to be rewarded
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          State Variables                   */
@@ -136,7 +136,10 @@ contract Staking is Ownable, ReentrancyGuard {
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 
-
+    /**
+     * @notice This function allows user to stake their tokens in this contract.
+     * @param amount Amount of tokens to be staked.
+     */
     function stake(uint256 amount) external nonReentrant notZero(amount) updateReward(msg.sender) {
         _totalSupply += amount;
         _balances[msg.sender] += amount;
@@ -147,6 +150,11 @@ contract Staking is Ownable, ReentrancyGuard {
         }
     }
 
+
+    /**
+     * @notice This function allows user to withdraw their staked tokens from this contract.
+     * @param amount Amount of tokens to be withdrawn.
+     */
     function unstake(uint256 amount) external nonReentrant notZero(amount) updateReward(msg.sender) {
         _totalSupply -= amount;
         _balances[msg.sender] -= amount;
@@ -157,6 +165,10 @@ contract Staking is Ownable, ReentrancyGuard {
         }
     }
 
+
+    /**
+     * @notice This function allows user to claim their earned reward tokens from this contract.
+     */
     function getReward() external updateReward(msg.sender) {
         uint256 reward = rewards[msg.sender];
         rewards[msg.sender] = 0;
@@ -172,6 +184,11 @@ contract Staking is Ownable, ReentrancyGuard {
     /*                  Public & External view Functions          */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+
+    /**
+     * @notice This function calculates reward per token.
+     * @return Amount of reward tokens to be paid out per token.
+     */
     function rewardPerToken() public view returns (uint256) {
         if (_totalSupply == 0) {
             return 0;
@@ -181,15 +198,32 @@ contract Staking is Ownable, ReentrancyGuard {
             s_rewardPerTokenStored + (s_rewardRate * (block.timestamp - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
     }
 
+    /**
+     * @notice This function calculates amount of reward tokens earned by user.
+     * @param account Address of user.
+     * @return Amount of reward tokens earned by user.
+     */
+
     function earned(address account) public view returns (uint256) {
         return
             (_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / MULTIPLIER) + rewards[account];
     } // tüm formül
 
+
+    /**
+     * @notice This function returns amount of staked tokens by user.
+     * @param account Address of user.
+     * @return Amount of staked tokens by user.
+     */
+
     function getbalanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
 
+    /**
+     * @notice This function returns total amount of staked tokens in this contract.
+     * @return Total amount of staked tokens in this contract.
+     */
     function getTotalSupply() public view returns (uint256) {
         return _totalSupply;
     }
