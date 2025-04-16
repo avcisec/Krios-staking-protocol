@@ -90,7 +90,9 @@ contract StakingTest is Test {
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
         vm.stopPrank();
-
+        vm.startPrank(staking.owner());
+        staking.notifyRewardAmount(weth.balanceOf(address(staking)));
+        vm.stopPrank();
         vm.startPrank(alice);
         krios.approve(address(staking), 100);
         staking.stake(100);
@@ -110,6 +112,9 @@ contract StakingTest is Test {
     function test_EarnedAmountAfter6Days() public {
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
+        vm.stopPrank();
+        vm.startPrank(staking.owner());
+        staking.notifyRewardAmount(weth.balanceOf(address(staking)));
         vm.stopPrank();
         vm.startPrank(alice);
         krios.approve(address(staking), 100);

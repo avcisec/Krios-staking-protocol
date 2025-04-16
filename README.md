@@ -16,10 +16,13 @@
 
 
 ## ❓What is Krios?
+Krios is an implementation of synthetix staking algorithm. 
 
 ## 🚩Features
 
+
 ## 📖Installation
+
 
 ## ⏩Quick Start
 
