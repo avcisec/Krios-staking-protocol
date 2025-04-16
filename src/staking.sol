@@ -71,7 +71,7 @@ contract Staking is Ownable, ReentrancyGuard {
     mapping(address => uint256) private _balances; // user's stakingToken balance
     mapping(address => uint256) public userRewardPerTokenPaid; // Formüldeki P değeri
     mapping(address => uint256) public rewards; //
-    uint256 public s_rewardRate = 100;
+    uint256 public s_rewardRate = 0;
     // saniyede kazılan ödül miktarı formüldeki R değeri
     uint256 public s_lastUpdateTime; // kontratın son çağrılma zamanı
     uint256 public s_rewardPerTokenStored; //  matematik formülündeki S değeri
@@ -89,6 +89,8 @@ contract Staking is Ownable, ReentrancyGuard {
     event tokenWithdrawn(address indexed user, uint256 amountWithdrawn);
     event rewardClaimed(address indexed user, uint256 ClaimedRewardAmount);
     event rewardRateUpdated(uint256 NewRewardRate);
+    event rewardAdded(uint256 reward);
+    event rewardDurationUpdated(uint256 newRewardDuration);
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                          Modifiers                         */
@@ -103,9 +105,11 @@ contract Staking is Ownable, ReentrancyGuard {
 
     modifier updateReward(address account) {
         s_rewardPerTokenStored = rewardPerToken();
-        s_lastUpdateTime = block.timestamp;
+        s_lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
         rewards[account] = earned(account);
         userRewardPerTokenPaid[account] = s_rewardPerTokenStored;
+        }
         _;
     }
 
@@ -177,26 +181,68 @@ contract Staking is Ownable, ReentrancyGuard {
         if (!success) {
             revert Staking__RewardClaimFailed();
         }
-        i_rewardToken.safeTransferFrom(address(this), msg.sender, reward);
     }
+
+    function setRewardDuration(uint256 _rewardDuration) external onlyOwner {
+        require(block.timestamp > s_periodFinish, "Previous rewards period must be complete before changing the duration");
+        s_rewardDuration = _rewardDuration;
+        emit rewardDurationUpdated(s_rewardDuration);
+    }
+
+    function notifyRewardAmount(uint256 reward) external onlyOwner updateReward(address(0)) {
+        
+        if (block.timestamp >= s_periodFinish) {
+            s_rewardRate = reward / s_rewardDuration;
+        } else {
+            uint256 remaining = s_periodFinish - block.timestamp;
+            uint256 leftOver = remaining * s_rewardRate;
+            s_rewardRate = (reward + leftOver) / s_rewardDuration;
+        }
+
+        // Ensure the provided reward amount is not more than the balance in the contract.
+        // This keeps the reward rate in the right range, preventing overflows due to
+        // very high values of rewardRate in the earned and rewardsPerToken functions;
+        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+
+        uint balance = i_rewardToken.balanceOf(address(this));
+        require(s_rewardRate <= (balance / s_rewardDuration), "reward is more than contract balance");
+        s_lastUpdateTime = block.timestamp;
+        s_periodFinish = block.timestamp + s_rewardDuration;
+        emit rewardAdded(reward);
+
+    }
+
+
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                  Public & External view Functions          */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 
+/** Eğer şu anki zaman block.timestamp ödül döneminin bitiş zamanından küçükse, o zaman şu anki zamanı döndür.
+Aksi halde ödül süresi bitmiş demektir, bu durumda s_periodFinish zamanını döndür.
+ */
+     function lastTimeRewardApplicable() public view returns(uint256) {
+        return block.timestamp < s_periodFinish ? block.timestamp : s_periodFinish;
+        
+     }
+
     /**
      * @notice This function calculates reward per token.
+     * @notice updated rewardPerToken calculation with timePeriod
      * @return Amount of reward tokens to be paid out per token.
      */
     function rewardPerToken() public view returns (uint256) {
         if (_totalSupply == 0) {
-            return 0;
+            return s_rewardPerTokenStored;
         }
 
         return
-            s_rewardPerTokenStored + (s_rewardRate * (block.timestamp - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
+            // s_rewardPerTokenStored + (s_rewardRate * (block.timestamp - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
+            s_rewardPerTokenStored + (s_rewardRate * (lastTimeRewardApplicable() - s_lastUpdateTime) * MULTIPLIER / _totalSupply);
     }
+
+
 
     /**
      * @notice This function calculates amount of reward tokens earned by user.
@@ -209,6 +255,13 @@ contract Staking is Ownable, ReentrancyGuard {
             (_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / MULTIPLIER) + rewards[account];
     } // tüm formül
 
+
+    /**
+     * @notice Calculates reward for the reward duration
+     */
+    function getRewardForDuration() external view returns (uint256) {
+        return s_rewardRate * s_rewardDuration;
+    }
 
     /**
      * @notice This function returns amount of staked tokens by user.

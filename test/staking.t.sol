@@ -56,6 +56,36 @@ contract StakingTest is Test {
         assert(staking.getbalanceOf(alice) != 0);
     }
 
+        function test_RewardUpdates() public {
+        vm.warp(123456);
+        vm.startPrank(tokenMinter);
+        krios.transfer(alice, 100);
+        vm.stopPrank();
+        vm.deal(staking.owner(), 1 ether);
+        console.log("block.timestamp:", block.timestamp);
+        console.log("s_periodFinish:", staking.s_periodFinish());
+        console.log("s_rewardRate:", staking.s_rewardRate());
+        vm.startPrank(staking.owner());
+        staking.notifyRewardAmount(weth.balanceOf(address(staking)));
+        vm.stopPrank();
+        console.log("staking contract reward balance", weth.balanceOf(address(staking)));
+        console.log("rewardRate after:", staking.s_rewardRate());
+        console.log("PeriodFinish after:", staking.s_periodFinish());
+        console.log("s_rewardPerTokenStored: ", staking.s_rewardPerTokenStored());
+        vm.startPrank(alice);
+        krios.approve(address(staking), 100);
+        staking.stake(100);
+        vm.stopPrank();
+        console.log("alice staking balance:", staking.getbalanceOf(alice));
+        console.log("alice reward:", staking.earned(alice));
+        console.log("staking contract WETH balance:", weth.balanceOf(address(staking)));
+        vm.warp(block.timestamp + 3 days);
+        vm.roll(block.number + 3);
+        console.log("alice reward after 3 days:", staking.earned(alice));
+
+        assert(staking.earned(alice) != 0);
+    }
+
     function test_Unstaking() public {
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
@@ -77,7 +107,7 @@ contract StakingTest is Test {
         assert(staking.getbalanceOf(alice) == 0);
     }
 
-    function test_EarnedAmountAfter1Year() public {
+    function test_EarnedAmountAfter6Days() public {
         vm.startPrank(tokenMinter);
         krios.transfer(alice, 100);
         vm.stopPrank();
@@ -88,9 +118,9 @@ contract StakingTest is Test {
         console.log("alice staking balance:", staking.getbalanceOf(alice));
         console.log("alice reward:", staking.earned(alice));
         console.log("staking contract WETH balance:", weth.balanceOf(address(staking)));
-        vm.warp(365 days);
+        vm.warp(6 days);
 
-        console.log("alice reward after 1 year:", staking.earned(alice));
+        console.log("alice reward after 6 days:", staking.earned(alice));
         assert(staking.earned(alice) != 0);
     }
 
